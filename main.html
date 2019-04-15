@@ -21,7 +21,7 @@
 
 		});
 		var socket;
-    var url = "http://192.168.0.28:8888"; //serverIP
+    var url = "http://192.168.0.5:8888"; //serverIP
     var options = {
       forceNew:true
     };
@@ -47,6 +47,7 @@
     socket.on('roomlist', function(items){
       //console.log(items);
       $('.roomlist').html('');
+      var roomSpan = "방 목록 " + items.length + "개";
       for(var i = 0; i < items.length; i++){
         var item = "<div class='rooms'>";
         item += items[i].name + " " + items[i].owner;
@@ -60,17 +61,20 @@
           }
         }
         $('.roomlist').append(item);
+        $('#room > span').html(roomSpan);
       }
     });
 
     function joinRoom(index, roomId){
       var roomPw = $('.rooms').eq(index).find('.roomPassword').val();
-      console.log(roomPw);
+      var name = $('#name').val();
+      //console.log(roomPw);
       /*console.log($('.rooms').eq(index));
       console.log($('.rooms').eq(index).find('.roomPassword'));*/
       //console.log(roomId);
       var roomOption = {
         id:roomId,
+        name:name,
         password:roomPw,
         command:'join'
       }
@@ -78,8 +82,10 @@
     }
 
     function leaveRoom(roomId){
+      var name = $('#name').val();
       var roomOption = {
         id:roomId,
+        name:name,
         password:'',
         command:'leave'
       }
@@ -87,8 +93,8 @@
     }
 
     socket.on('roomResult', function(msg){
-      if(msg.type == 'join'){
-        console.log(roomPw);
+      if(msg.type == 'join' || msg.type == 'create'){
+        //console.log(roomPw);
         $('.roomPassword').hide();
         $('#recipent').val(msg.recipent);
         $('#recipent').attr('readonly', true);
@@ -103,6 +109,8 @@
       }else if(msg.type == 'error'){
         alert(msg.sender + ": " + msg.data);
       }
+      var roomSpan = "방 목록 " + msg.roomCnt + "개";
+      $('#room > span').html(roomSpan);
     });
 
     function send(){
@@ -125,7 +133,7 @@
       location.href = "/logout";
     }
 
-    function handleClick(ck){
+    function roomPwCk(ck){
       if(ck.checked){
         $('#roomPw').css('display','block');
       }else{
@@ -198,7 +206,7 @@
         <div class="roomController">
           방 아이디: <input type="text" id="roomId" value=""><br/>
           방 이름: <input type="text" id="roomName" value=""><br/>
-          방 비밀번호: <input type="checkbox" onclick="handleClick(this)"/>
+          방 비밀번호: <input type="checkbox" onclick="roomPwCk(this)"/>
           <input type="password" id="roomPw" value=""><br/>
           <input type="button" class="btn-primary btn-lg" id="create" value="방 만들기" onclick="createRoom()">
           <input type="button" class="btn-lg" id="update" value="수정" onclick="updateRoom()">
