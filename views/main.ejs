@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Home</title>
+  </head>
+  <body>
+    <div>
+      <h5>main</h5>
+      <% if(user){ %>
+        <p><%= user.id %> 님 황영합니다.</p>
+      <% } %>
+      <a href="/logout">로그아웃</a>
+      <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Home</title>
+    <link rel="stylesheet" href="/lib/bootstrap">
+    <style media="screen">
+      body{ margin: 0; padding: 0; }
+      #chat_log{width:95%; height:200px;}
+      #room{ float:left; min-width: 300px; width:50%; min-height: 200px; }
+      .rooms{ cursor:pointer; }
+      .roomController{ float:left; min-width: 300px; width:50%; min-height: 150px; }
+      #chat{ float:left; }
+      #roomPw{ display:none; }
+    </style>
+	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+  <script src="/lib/bootstrap.js"></script>
+	<script>
+		$(function(){
+
+		});
+		var socket;
+    var url = "http://192.168.0.28:8888"; //serverIP
+    var options = {
+      forceNew:true
+    };
+
+    socket = io.connect(url, options);
+    socket.on('connect', function(){
+      console.log('connect: ' + url);
+    });
+
+    socket.on('login', function(user){
+      $('#name').val(user);
+    });
+
+    socket.on('disconnect', function(){
+      console.log('disconnect');
+    });
+
+    socket.on('message', function(msg){
+        console.log(JSON.stringify(msg));
+		    print(msg.sender + ': ' + msg.data);
+		});
+
+    socket.on('roomlist', function(items){
+      //console.log(items);
+      $('.roomlist').html('');
+      for(var i = 0; i < items.length; i++){
+        var item = "<div class='rooms'>";
+        item += items[i].name + " " + items[i].owner;
+        if(items[i].id == $('#recipent').val()){
+          item += "<input type='button' id='leaveRoom' onclick='leaveRoom(\"" + items[i].id + "\")' value='나가기'></div>";
+        }else{
+          if(!items[i].password){
+            item += "<input type='button' id='joinRoom' value='접속' onclick='joinRoom(" + i + ", \"" + items[i].id + "\")'>";
+          }else{
+            item += "<input type='password' class='roomPassword' placeholder='비밀번호' value=''><input type='button' value='접속' onclick='joinRoom(" + i + ", \"" + items[i].id + "\")'>";
+          }
+        }
+        $('.roomlist').append(item);
+      }
+    });
+
+    function joinRoom(index, roomId){
+      var roomPw = $('.rooms').eq(index).find('.roomPassword').val();
+      console.log(roomPw);
+      /*console.log($('.rooms').eq(index));
+      console.log($('.rooms').eq(index).find('.roomPassword'));*/
+      //console.log(roomId);
+      var roomOption = {
+        id:roomId,
+        password:roomPw,
+        command:'join'
+      }
+      socket.emit('room',roomOption);
+    }
+
+    function leaveRoom(roomId){
+      var roomOption = {
+        id:roomId,
+        password:'',
+        command:'leave'
+      }
+      socket.emit('room',roomOption);
+    }
+
+    socket.on('roomResult', function(msg){
+      if(msg.type == 'join'){
+        console.log(roomPw);
+        $('.roomPassword').hide();
+        $('#recipent').val(msg.recipent);
+        $('#recipent').attr('readonly', true);
+        $(".chatType option:eq(1)").attr("selected", true);
+        $('.roomlist #joinRoom').hide();
+      }else if(msg.type == 'leave'){
+        $('.roomPassword').show();
+        $('#recipent').val('');
+        $('#recipent').attr('readonly', false);
+        $(".chatType option:eq(0)").attr("selected", true);
+        $('.roomlist #joinRoom').show();
+      }else if(msg.type == 'error'){
+        alert(msg.sender + ": " + msg.data);
+      }
+    });
+
+    function send(){
+      var sender = $('#name').val();
+      var recipent = $('#recipent').val();
+      var data = $('#data').val();
+      var command = $('.chatType option:selected').val();
+      console.log(command);
+      var message = {
+        sender:sender,
+        recipent:recipent,
+        command:command,
+        type:'text',
+        data:data
+      }
+      socket.emit('message',message);
+    }
+
+    function logout(){
+      location.href = "/logout";
+    }
+
+    function handleClick(ck){
+      if(ck.checked){
+        $('#roomPw').css('display','block');
+      }else{
+        $('#roomPw').css('display','none');
+      }
+    }
+
+    function createRoom(){
+      //console.log("만들");
+      var roomId = $('#roomId').val();
+      var roomName = $('#roomName').val();
+      var roomHost = $('#name').val();
+      var roomPassword = $('#roomPw').val();
+      var roomOption = {
+        id:roomId,
+        name:roomName,
+        password:roomPassword,
+        owner:roomHost,
+        command:'create'
+      }
+      socket.emit('room',roomOption);
+    }
+
+    function updateRoom(){
+      //console.log("수정");
+      var roomId = $('#roomId').val();
+      var roomName = $('#roomName').val();
+      var roomHost = $('#name').val();
+      var roomPassword = $('#roomPw').val();
+      var roomOption = {
+        id:roomId,
+        name:roomName,
+        password:roomPassword,
+        owner:roomHost,
+        command:'update'
+      }
+      socket.emit('room',roomOption);
+    }
+
+    function deleteRoom(){
+      //console.log("삭제");
+      var roomId = $('#roomId').val();
+      var roomName = $('#roomName').val();
+      var roomHost = $('#name').val();
+      var roomPassword = $('#roomPw').val();
+      var roomOption = {
+        id:roomId,
+        name:roomName,
+        password:roomPassword,
+        owner:roomHost,
+        command:'delete'
+      }
+      socket.emit('room',roomOption);
+    }
+
+    function print(data){
+      $('#chat_log').append(data + "\n");
+      $('#chat_log').scrollTop($('#chat_log').innerHeight());
+    }
+	</script>
+  </head>
+  <body>
+    <div class="container" style="width:60%; margin: 50px auto;">
+      <div id="room">
+        <h5>rooms List</h5>
+        <span>방 목록</span><br/>
+        <div class="roomlist">
+
+        </div>
+        <div class="roomController">
+          방 아이디: <input type="text" id="roomId" value=""><br/>
+          방 이름: <input type="text" id="roomName" value=""><br/>
+          방 비밀번호: <input type="checkbox" onclick="handleClick(this)"/>
+          <input type="password" id="roomPw" value=""><br/>
+          <input type="button" class="btn-primary btn-lg" id="create" value="방 만들기" onclick="createRoom()">
+          <input type="button" class="btn-lg" id="update" value="수정" onclick="updateRoom()">
+          <input type="button" class="btn-danger btn-lg" id="delete" value="삭제" onclick="deleteRoom()">
+        </div>
+
+      </div>
+      <div id="chat">
+        <h5>message</h5>
+        <div>
+          <span>보내는 사람:</span>
+          <input type="text" id="name" readonly><br/>
+          <input type="button" id="logout" onclick="logout()" value="로그아웃">
+        </div>
+        <div>
+          <select class="chatType" name="">
+            <option value="chat">chat</option>
+            <option value="groupChat">groupChat</option>
+          </select><br/>
+          <span>받는 사람:</span>
+          <input type="text" id="recipent"><br/>
+          <span>내용:</span>
+          <input type="text" id="data">
+        </div>
+        <input type="submit" id="send" value="전송" onclick="send()">
+      </div>
+      <div>
+        <textarea id="chat_log" readonly></textarea>
+      </div>
+    </div>
+  </body>
+</html>

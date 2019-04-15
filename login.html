@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Home</title>
+    <link rel="stylesheet" href="/lib/bootstrap">
+    <style media="screen">
+      .container *{
+        margin: 10px auto;
+      }
+      .container > *{
+        text-align:center;
+      }
+    </style>
+  	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+  	<script src="/socket.io/socket.io.js"></script>
+    <script src="/lib/bootstrap.js"></script>
+    <script type="text/javascript">
+    $(function(){
+      var uid = $('#id').val();
+      var upw = $('#pw');
+      var pmy = $('#pmy');
+      upw.on('mouseover focus', function(){
+        if($(this).val()){
+          pmy.attr('class','btn btn-lg btn-primary');
+        }else{
+          pmy.attr('class','btn btn-lg');
+        }
+      });
+      upw.on('mouseout blur', function(){
+        if($(this).val()){
+          pmy.attr('class','btn btn-lg btn-primary');
+        }else{
+          pmy.attr('class','btn btn-lg');
+        }
+      });
+
+    });
+    function ck(){
+      var id = document.getElementById('id').value;
+      var pw = document.getElementById('pw').value;
+      if(id && pw){
+        var form = document.getElementById('login');
+        form.submit();
+      }else{
+        alert("아이디와 비밀번호를 입력해주세요.");
+      }
+    }
+    function join(){
+      location.href = '/join';
+    }
+  </script>
+  </head>
+  <body>
+    <div class="container" style="width:60%; margin: 50px auto;">
+      <h5>login</h5>
+      <form method='post' id='login' name='login' action='/login'>
+        <input type="text" id="id" name="id" value=""><br/>
+    		<input type="text" id="pw" name="pw" value="">
+        <br/>
+        <input class="btn btn-lg" id="pmy" style="width:150px" type="button" onclick="ck()" value="로그인">
+      </form>
+      <div>
+        <button class="btn btn-lg" style="width:150px" onclick="join()">회원가입</button>
+      </div>
+    </div>
+  </body>
+</html>

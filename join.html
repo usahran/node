@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Home</title>
+    <link rel="stylesheet" href="/lib/bootstrap">
+    <style media="screen">
+      .conainter *{
+        text-align:center;
+        margin: 10px auto;
+      }
+    </style>
+  	<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+  	<script src="/socket.io/socket.io.js"></script>
+    <script src="/lib/bootstrap.js"></script>
+    <script type="text/javascript">
+      $(function(){
+
+      });
+      function member(){
+        var id = document.getElementById('id').value;
+        var pw = document.getElementById('pw').value;
+        console.log(id + pw);
+        if(id && pw){
+          var form = document.getElementById('join');
+          form.submit();
+        }else{
+          alert("아이디와 비밀번호를 입력해주세요.");
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div class="conainter" style="width:60%; margin: 50px auto;">
+      <h5>join</h5>
+      <form method='post' id='join' name='join' action='/join'>
+        <input type="text" id="id" name="id" value=""><br/>
+    		<input type="text" id="pw" name="pw" value="">
+        <br/>
+        <input class="btn btn-lg btn-primary" style="width:150px" type="button" onclick="member()" value="회원가입">
+      </form>
+      <div>
+        <button class="btn btn-danger btn-lg" style="width:150px" onclick="history.back();">취소</button>
+      </div>
+    </div>
+  </body>
+</html>
