@@ -1,17 +1,10 @@
-var express = require('express');
+var express = require('express');  // framework
 var app = express();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
+var http = require('http').Server(app); //http server
+var io = require('socket.io')(http); // http(tcp)socket
 var cors = require('cors');
 var bodyparser = require('body-parser');
 var mongodb = require('mongodb').MongoClient;
-var session = require('express-session');
-
-app.use(session({
- secret: 'User',
- resave: true,
- saveUninitialized: true
-}));
 
 app.set('view engine','ejs');
 app.set('views', 'views');
@@ -78,7 +71,6 @@ app.post('/login', function(req, res){
 });
 
 app.get('/logout', function(req, res){
-	user = null;
 	res.redirect('/');
 });
 
@@ -104,9 +96,11 @@ app.post('/join', function(req, res){
 				emsg = "아이디 중복";
 				res.render('error', {error:emsg});
 			}else{
-				collection.insertOne(obj, function(err, res) {
-		    	if (err) throw err;
-				});
+        try{
+  				collection.insertOne(obj);
+        }catch(e){
+          console.log(e);
+        }
 				res.redirect('/');
 			}
 		});
@@ -132,14 +126,14 @@ io.on('connection', function(socket){
   		io.emit('message', msg);
 		}else{
       if(msg.command == 'chat'){
-        if(ids[msg.recipent]){
-  				io.to(socket.id).emit('message',msg);
-  				io.sockets.connected[ids[msg.recipent]].emit('message',msg);
+        if(ids[msg.recipent]){ // 메세지 보낼 상대가 있을 때
+  				io.to(socket.id).emit('message',msg); // socket.id 자신에게 보여짐
+  				io.sockets.connected[ids[msg.recipent]].emit('message',msg) // ids[msg.recipent]상대방에게 보냄;
   			}
       }else if(msg.command == 'groupChat'){
         //console.log('groupChat');
         //console.log(msg.recipent);
-        io.sockets.in(msg.recipent).emit('message',msg);
+        io.sockets.in(msg.recipent).emit('message',msg); // room 내에서 여러 사람에게 보낼 때
       }
 		}
   });
@@ -151,6 +145,7 @@ io.on('connection', function(socket){
     var message = {
       sender:'Server',
       recipent:'',
+      roomCnt:rooms.length,
       command:'message',
       type:'error',
       data:'접속 실패'
@@ -185,14 +180,15 @@ io.on('connection', function(socket){
         message.type = "delete";
         message.data = "방이 삭제됨";
       }
-    }else if(input.command == "join"){
+    }
+    if(input.command == "join"){
       if(io.sockets.adapter.rooms[input.id]){
-        if(io.sockets.adapter.rooms[input.id].password && io.sockets.adapter.rooms[input.id].password == input.password || !io.sockets.adapter.rooms[input.id].password){
+        if(io.sockets.adapter.rooms[input.id].password == input.password || !io.sockets.adapter.rooms[input.id].password){
           //console.log(JSON.stringify(io.sockets.adapter.rooms[input.id]) + " " + socket.id + "\n");
           //console.log(JSON.stringify(io.sockets.adapter.rooms));
           //console.log(JSON.stringify(io.sockets.adapter.rooms[socket.id]) + " " + JSON.stringify(io.sockets.adapter.rooms[input.id]));
           message.type = "join";
-          message.data = "접속";
+          message.data = socket.loginId + "님 접속";
           socket.join(input.id);
           console.log(socket.loginId + ' 접속');
         }
@@ -204,10 +200,13 @@ io.on('connection', function(socket){
           socket.leave(input.id);
         }
         message.type = "leave";
-        message.data = "나가기";
+        message.data = socket.loginId + "님 나감";
       }
     }
     message.recipent = input.id;
+
+    if(input.command == "join" && message.type == "join" || input.command == "create" || input.command == "leave")
+      io.sockets.in(message.recipent).emit('message',message);
     io.to(socket.id).emit('roomResult',message);
     rooms = getRoomList();
     io.sockets.emit('roomlist', rooms);
